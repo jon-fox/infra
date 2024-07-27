@@ -1,4 +1,5 @@
 **/*.terraform*/*
 **/*.tfstate
 **/*.tfstate.*
-**/*.secrets.*
+**/*secrets.*
+**/.terraform.lock.hcl
