@@ -1,1 +1,3 @@
-secrets.tf
+secrets.sh
+*.terraform*
+*.tfstate
