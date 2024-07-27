@@ -3,3 +3,6 @@
 **/*.tfstate.*
 **/*secrets.*
 **/.terraform.lock.hcl
+password.txt
+*.key
+*venv
