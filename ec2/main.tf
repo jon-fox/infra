@@ -18,6 +18,10 @@ data "aws_ssm_parameter" "ec2_name" {
   name = "/account/ec2_name"  
 }
 
+data "aws_ssm_parameter" "key_pair_name" {
+  name = "/account/ec2/key_pair_name"  
+}
+
 data "aws_subnets" "selected_vpc_subnets" {
 
   filter {
@@ -34,6 +38,10 @@ data "aws_subnets" "selected_vpc_subnets" {
     name   = "tag:Name"
     values = ["*Public*"]
   }
+}
+
+data "aws_key_pair" "key_pair" {
+  key_name = data.aws_ssm_parameter.key_pair_name.value
 }
 
 
@@ -62,6 +70,8 @@ resource "aws_launch_template" "ec2_launch_template" {
   image_id      = data.aws_ssm_parameter.ami.value
 #   instance_type = var.instance_type
   instance_type = "t2.nano"
+
+  key_name = data.aws_key_pair.key_pair.key_name
 
   network_interfaces {
     associate_public_ip_address = true
