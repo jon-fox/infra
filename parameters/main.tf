@@ -43,7 +43,7 @@ locals {
     backblaze_bucket_name  = var.backblaze_bucket_name
     backblaze_endpoint     = var.backblaze_endpoint
     backblaze_region       = var.backblaze_region
-    backblaze_cdn_url = var.backblaze_cdn_url
+    backblaze_cdn_url      = var.backblaze_cdn_url
   }
 }
 
