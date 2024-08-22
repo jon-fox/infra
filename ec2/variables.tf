@@ -5,7 +5,8 @@ variable "region" {
 
 variable "instance_type" {
   description = "EC2 instance type"
-  default     = "g4dn.xlarge"
+  # default     = "g4dn.xlarge"
+  default     = "G4ad.xlarge"
 }
 
 variable "ami_id" {
