@@ -66,6 +66,15 @@ resource "aws_security_group" "ec2_launch_template_sg" {
   }
 }
 
+data "aws_iam_role" "existing_role" {
+  name = "docker-external-app"
+}
+
+resource "aws_iam_instance_profile" "ec2_role" {
+  name = "ec2-instance-role-profile"
+  role = data.aws_iam_role.existing_role.name
+}
+
 resource "aws_launch_template" "ec2_launch_template" {
   image_id      = data.aws_ssm_parameter.ami.value
 #   instance_type = var.instance_type
@@ -76,6 +85,10 @@ resource "aws_launch_template" "ec2_launch_template" {
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.ec2_launch_template_sg.id]
+  }
+  
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ec2_role.name
   }
 }
 
