@@ -30,7 +30,10 @@ resource "aws_s3_bucket_policy" "app_bucket_policy" {
           "s3:PutObject",
           "s3:DeleteObject"
         ]
-        Resource = "${aws_s3_bucket.app_bucket.arn}/*"
+        Resource = [
+          "${aws_s3_bucket.app_bucket.arn}",
+          "${aws_s3_bucket.app_bucket.arn}/*"
+        ]
       }
     ]
   })
@@ -43,6 +46,13 @@ resource "aws_iam_policy" "s3_access_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+            "s3:ListBucket"
+        ],
+        Resource = "${aws_s3_bucket.app_bucket.arn}"
+      },
       {
         Effect = "Allow"
         Action = [
