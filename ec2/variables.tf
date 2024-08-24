@@ -6,8 +6,8 @@ variable "region" {
 variable "instance_type" {
   description = "EC2 instance type"
   # default     = "g4dn.xlarge"
-  # default     = "g4dn.xlarge" #nvidia based gpu
-  default = "t3.xlarge"
+  default     = "g4dn.xlarge" #nvidia based gpu
+  # default = "t3.xlarge"
 }
 
 variable "ami_id" {
