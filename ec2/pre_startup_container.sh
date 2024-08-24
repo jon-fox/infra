@@ -33,7 +33,7 @@ fi
 # Start Docker Compose services
 echo "Starting Docker Compose services..."
 
-docker compose up -d
+docker-compose up -d
 
 if [ $? -eq 0 ]; then
   echo "Docker Compose services started successfully."

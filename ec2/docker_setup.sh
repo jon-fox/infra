@@ -1,19 +1,10 @@
 #!/bin/bash
 
-# Update the package index and upgrade the system packages
-sudo yum update -y
+# Update the package index
+sudo dnf update -y
 
-# Install necessary packages for Docker installation
-sudo yum install -y yum-utils device-mapper-persistent-data lvm2
-
-# Add Docker's official GPG key and set up the Docker stable repository
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-
-# Update the package index again after adding the Docker repo
-sudo yum update -y
-
-# Install Docker packages
-sudo yum install -y docker-ce docker-ce-cli containerd.io
+# Install Docker from the Amazon Linux 2023 repository
+sudo dnf install -y docker
 
 # Enable Docker service to start on boot
 sudo systemctl enable docker
@@ -21,11 +12,29 @@ sudo systemctl enable docker
 # Start Docker service
 sudo systemctl start docker
 
+# Add the ec2-user to the docker group to run Docker without sudo
+sudo usermod -aG docker ec2-user
+
+# Install Docker Compose (latest version)
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+# Apply executable permissions to the Docker Compose binary
+sudo chmod +x /usr/local/bin/docker-compose
+
 # Verify Docker installation
 docker_version=$(docker --version)
 if [ $? -eq 0 ]; then
     echo "Docker installed successfully: $docker_version"
 else
     echo "Docker installation failed"
+    exit 1
+fi
+
+# Verify Docker Compose installation
+docker_compose_version=$(docker-compose --version)
+if [ $? -eq 0 ]; then
+    echo "Docker Compose installed successfully: $docker_compose_version"
+else
+    echo "Docker Compose installation failed"
     exit 1
 fi
