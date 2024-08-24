@@ -90,6 +90,13 @@ resource "aws_launch_template" "ec2_launch_template" {
   iam_instance_profile {
     name = aws_iam_instance_profile.ec2_role.name
   }
+
+  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
+    region         = var.region,
+    repository_url = data.aws_ecr_repository.ecr_repo.repository_url,
+    bucket_name    = data.aws_ssm_parameter.s3_bucket_name.value,
+    script_path    = "config"
+  }))
 }
 
 resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
@@ -115,6 +122,34 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
 
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+data "aws_ecr_repository" "ecr_repo" {
+  name = "app-ecr-repo"
+}
+
+resource "aws_iam_role_policy" "ecr_policy" {
+  name   = "ecr-policy"
+  role   = data.aws_iam_role.existing_role.name
+  policy = data.aws_iam_policy_document.ecr_policy.json
+}
+
+data "aws_iam_policy_document" "ecr_policy" {
+  statement {
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload"
+    ]
+
+    resources = [
+      data.aws_ecr_repository.ecr_repo.arn
+    ]
   }
 }
 
