@@ -1,16 +1,12 @@
 #!/bin/bash
 
-# Variables passed from Terraform
-REGION=${region}
-REPOSITORY_URL=${repository_url}
-BUCKET_NAME=${bucket_name}
-SCRIPT_PATH=${script_path}
+sudo snap start amazon-ssm-agent
 
-aws s3 cp s3://${BUCKET_NAME}/${SCRIPT_PATH}/pre_startup_container.sh /home/setup/pre_startup_container.sh
-aws s3 cp s3://${BUCKET_NAME}/${SCRIPT_PATH}/docker_setup.sh /home/setup/docker_setup.sh
-aws s3 cp s3://${BUCKET_NAME}/${SCRIPT_PATH}/docker-compose.yml /home/setup/docker-compose.yml
+aws s3 cp s3://${bucket_name}/${script_path}/pre_startup_container.sh /home/setup/pre_startup_container.sh
+aws s3 cp s3://${bucket_name}/${script_path}/docker_setup.sh /home/setup/docker_setup.sh
+aws s3 cp s3://${bucket_name}/${script_path}/docker-compose.yml /home/setup/docker-compose.yml
 
-chmod +x /home/setup/*.sh
+chmod +x /home/setup/*
 
 DOCKER_IMAGE_URI=$(aws ssm get-parameter --name "/account/docker_image_uri" --query "Parameter.Value" --output text)
 

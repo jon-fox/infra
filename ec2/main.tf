@@ -22,6 +22,10 @@ data "aws_ssm_parameter" "key_pair_name" {
   name = "/account/ec2/key_pair_name"  
 }
 
+data "aws_ssm_parameter" "s3_bucket_name" {
+  name = "/account/config_bucket_name"  
+}
+
 data "aws_subnets" "selected_vpc_subnets" {
 
   filter {
@@ -54,7 +58,7 @@ resource "aws_security_group" "ec2_launch_template_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [format("%s/32", trimspace(data.http.my_ip.response_body))]
+    cidr_blocks = [format("%s/32", trimspace(data.http.my_ip.response_body)), "18.206.107.24/29"]
   }
 
     # broad for now
@@ -68,6 +72,11 @@ resource "aws_security_group" "ec2_launch_template_sg" {
 
 data "aws_iam_role" "existing_role" {
   name = "docker-external-app"
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy_attachment" {
+  role = data.aws_iam_role.existing_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_instance_profile" "ec2_role" {
@@ -91,12 +100,17 @@ resource "aws_launch_template" "ec2_launch_template" {
     name = aws_iam_instance_profile.ec2_role.name
   }
 
-  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    region         = var.region,
-    repository_url = data.aws_ecr_repository.ecr_repo.repository_url,
+  user_data = base64encode(data.template_file.init.rendered)
+}
+
+data "template_file" "init" {
+  template = "${file("${path.module}/user_data.sh")}"
+  vars = {
+    # region         = var.region,
+    # repository_url = data.aws_ecr_repository.ecr_repo.repository_url,
     bucket_name    = data.aws_ssm_parameter.s3_bucket_name.value,
     script_path    = "config"
-  }))
+  }
 }
 
 resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
