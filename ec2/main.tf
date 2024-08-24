@@ -84,8 +84,19 @@ resource "aws_iam_instance_profile" "ec2_role" {
   role = data.aws_iam_role.existing_role.name
 }
 
+data "aws_ami" "latest_amazon_linux_2023" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.5.20240819.0-kernel-6.1-x86_64"]
+  }
+}
+
 resource "aws_launch_template" "ec2_launch_template" {
-  image_id      = data.aws_ssm_parameter.ami.value
+  image_id      = data.aws_ami.latest_amazon_linux_2023.id
+  # image_id      = var.ami_id
   instance_type = var.instance_type
   # instance_type = "t2.nano"
 
@@ -109,7 +120,7 @@ data "template_file" "init" {
     # region         = var.region,
     # repository_url = data.aws_ecr_repository.ecr_repo.repository_url,
     bucket_name    = data.aws_ssm_parameter.s3_bucket_name.value,
-    script_path    = "config"
+    script_path    = "user_data"
   }
 }
 
