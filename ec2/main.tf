@@ -112,6 +112,15 @@ resource "aws_launch_template" "ec2_launch_template" {
   }
 
   user_data = base64encode(data.template_file.init.rendered)
+
+    block_device_mappings {
+    device_name = "/dev/xvda"  # Root volume
+    ebs {
+      volume_size           = 40  # Root volume size in GB
+      volume_type           = "gp2"
+      delete_on_termination = true
+    }
+  }
 }
 
 data "template_file" "init" {
