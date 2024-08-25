@@ -61,6 +61,21 @@ resource "aws_security_group" "ec2_launch_template_sg" {
     cidr_blocks = [format("%s/32", trimspace(data.http.my_ip.response_body)), "18.206.107.24/29"]
   }
 
+  # Allow incoming HTTPS traffic on port 443 and 80 from any IP address, dangerous will change later
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
     # broad for now
   egress {
     from_port   = 0
