@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   my-service:
     image: ${DOCKER_IMAGE_URI}
@@ -7,3 +9,11 @@ services:
       - "8000:8000"
     deploy:
       replicas: 1
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all  # Or specify particular GPUs, e.g., "0,1"
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility  # If additional capabilities are needed

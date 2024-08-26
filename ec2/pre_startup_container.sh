@@ -24,6 +24,7 @@ else
 
   # Insert your host-specific startup tasks here
   run_startup_script "/home/setup/docker_setup.sh"
+  run_startup_script "/home/setup/nvidia_setup.sh"
 
   # Create the flag file to indicate the script has been run
   touch "$FLAG_FILE"
