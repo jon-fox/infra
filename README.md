@@ -9,6 +9,7 @@ https://cloud-images.ubuntu.com/locator/ec2/
 
 # for the sso identity taking it and exporting it directly into the terminal worked
 
+```bash
 export AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials
 export AWS_CONFIG_FILE=~/.aws/config
 
@@ -21,3 +22,4 @@ export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r '.Credentials.SecretAcc
 export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r '.Credentials.SessionToken')
 
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+```
