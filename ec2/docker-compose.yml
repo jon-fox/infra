@@ -1,8 +1,7 @@
-version: "3.8"
-
 services:
   my-service:
-    image: ${DOCKER_IMAGE_URI}
+    # image: ${DOCKER_IMAGE_URI}
+    image: jonfoxdev/jusskipit:latest
     ports:
       - "8080:80"
       - "8443:443"
@@ -13,7 +12,7 @@ services:
         reservations:
           devices:
             - capabilities: [gpu]
-    runtime: nvidia
+    # runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all  # Or specify particular GPUs, e.g., "0,1"
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility  # If additional capabilities are needed
