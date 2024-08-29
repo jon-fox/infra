@@ -1,7 +1,6 @@
 services:
   my-service:
-    # image: ${DOCKER_IMAGE_URI}
-    image: jonfoxdev/jusskipit:latest
+    image: ${DOCKER_IMAGE_URI}
     ports:
       - "80:80"
       - "443:443"
