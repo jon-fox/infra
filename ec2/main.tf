@@ -26,6 +26,10 @@ data "aws_ssm_parameter" "s3_bucket_name" {
   name = "/account/config_bucket_name"  
 }
 
+data "aws_ssm_parameter" "acm_certificate_arn" {
+  name = "/account/api/acm_cert"  
+}
+
 data "aws_subnets" "selected_vpc_subnets" {
 
   filter {
@@ -62,12 +66,12 @@ resource "aws_security_group" "ec2_launch_template_sg" {
   }
 
   # Allow incoming HTTPS traffic on port 443 and 80 from any IP address, dangerous will change later
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   ingress {
     from_port   = 443
@@ -115,6 +119,55 @@ data "aws_ami" "latest_amazon_linux_2023" {
     values = ["al2023-ami-2023.5.20240819.0-kernel-6.1-x86_64"]
   }
 }
+
+resource "aws_lb" "app_alb" {
+  name               = "app-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.selected_vpc_subnets.ids
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "app-alb"
+  }
+}
+
+resource "aws_lb_target_group" "app_tg" {
+  name     = "app-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_ssm_parameter.vpc_id.value
+
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
+
+  tags = {
+    Name = "app-tg"
+  }
+}
+
+resource "aws_lb_listener" "https_listener" {
+  load_balancer_arn = aws_lb.app_alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = data.aws_ssm_parameter.acm_certificate_arn.value
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app_tg.arn
+  }
+}
+
 
 resource "aws_launch_template" "ec2_launch_template" {
   image_id      = data.aws_ami.latest_amazon_linux_2023.id
@@ -164,6 +217,8 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   min_size         = 1
   max_size         = 1
   desired_capacity = 1
+
+  target_group_arns = [aws_lb_target_group.app_tg.arn]
 
   vpc_zone_identifier =  data.aws_subnets.selected_vpc_subnets.ids
 
