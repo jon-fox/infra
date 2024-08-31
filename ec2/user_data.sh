@@ -1,5 +1,9 @@
 #!/bin/bash
 
+sudo yum install -y nc
+
+while true; do echo -e "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK" | nc -l -p 8080 >/dev/null 2>&1; done &
+
 sudo snap start amazon-ssm-agent
 
 cd /home
