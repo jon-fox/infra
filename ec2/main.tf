@@ -65,11 +65,10 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-    # broad for now
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -168,7 +167,7 @@ resource "aws_lb_listener" "https_listener" {
 
 
 resource "aws_launch_template" "ec2_launch_template" {
-  image_id      = data.aws_ami.latest_amazon_linux_2023.ids
+  image_id      = data.aws_ami.latest_amazon_linux_2023.id
   # image_id      = var.ami_id
   instance_type = var.instance_type
   # instance_type = "t2.nano"
