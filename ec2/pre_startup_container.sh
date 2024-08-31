@@ -23,8 +23,8 @@ else
   echo "Running pre-startup script for the first time..."
 
   # Insert your host-specific startup tasks here
-  run_startup_script "/home/setup/nvidia_setup.sh"
-  run_startup_script "/home/setup/docker_setup.sh"
+  # run_startup_script "/home/setup/nvidia_setup.sh"
+  # run_startup_script "/home/setup/docker_setup.sh"
 
 
   sudo nvidia-ctk runtime configure --runtime=docker

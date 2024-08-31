@@ -91,6 +91,13 @@ resource "aws_security_group" "ec2_launch_template_sg" {
     protocol    = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 data "aws_iam_role" "existing_role" {
@@ -107,15 +114,15 @@ resource "aws_iam_instance_profile" "ec2_role" {
   role = data.aws_iam_role.existing_role.name
 }
 
-data "aws_ami" "latest_amazon_linux_2023" {
-  most_recent = true
-  owners      = ["amazon"]
+# data "aws_ami" "latest_amazon_linux_2023" {
+#   most_recent = true
+#   owners      = ["amazon"]
 
-  filter {
-    name   = "name"
-    values = ["al2023-ami-2023.5.20240819.0-kernel-6.1-x86_64"]
-  }
-}
+#   filter {
+#     name   = "name"
+#     values = ["al2023-ami-2023.5.20240819.0-kernel-6.1-x86_64"]
+#   }
+# }
 
 resource "aws_lb" "app_alb" {
   name               = "app-alb"
@@ -167,7 +174,7 @@ resource "aws_lb_listener" "https_listener" {
 
 
 resource "aws_launch_template" "ec2_launch_template" {
-  image_id      = data.aws_ami.latest_amazon_linux_2023.id
+  image_id      = data.aws_ssm_parameter.ami.value
   # image_id      = var.ami_id
   instance_type = var.instance_type
   # instance_type = "t2.nano"
