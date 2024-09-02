@@ -89,7 +89,7 @@ resource "aws_db_instance" "rds_postgres" {
   vpc_security_group_ids  = [aws_security_group.rds_security_group.id]
   iam_database_authentication_enabled = true
   skip_final_snapshot     = true
-  publicly_accessible     = false
+  publicly_accessible     = true
   backup_retention_period = 7
   multi_az                = false
   storage_encrypted       = true
