@@ -10,3 +10,4 @@ parameters/secrets_encrypted_decrypted.txt
 salt.bin
 parameters/src/secrets_encrypted_decrypted.txt
 ec2/key/transcription_key.pem
+rds/nohup.out
