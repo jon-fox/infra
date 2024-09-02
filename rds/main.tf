@@ -36,6 +36,11 @@ data "aws_security_group" "ec2_security_group" {
   name = "ec2_launch_template_sg"
 }
 
+data "http" "my_ip" {
+  url = "http://checkip.amazonaws.com/"
+}
+
+
 resource "aws_security_group" "rds_security_group" {
   name        = "rds-sg"
   description = "Allow EC2 access to RDS"
@@ -49,6 +54,16 @@ resource "aws_security_group" "rds_security_group" {
     protocol    = "tcp"
     security_groups = [
       data.aws_security_group.ec2_security_group.id
+    ]
+  }
+
+  ingress {
+    description = "PostgreSQL access from my IP"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [
+      "${chomp(data.http.my_ip.body)}/32"
     ]
   }
 
