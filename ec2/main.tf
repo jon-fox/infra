@@ -80,6 +80,10 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
+data "aws_security_group" "rds_security_group" {
+  name = "rds-sg"
+}
+
 resource "aws_security_group" "ec2_launch_template_sg" {
   name        = "ec2_launch_template_sg"
   description = "Allow inbound traffic from alb"
@@ -111,6 +115,15 @@ resource "aws_security_group" "ec2_launch_template_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [
+      data.aws_security_group.rds_security_group.id
+    ]
   }
 }
 
