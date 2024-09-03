@@ -100,6 +100,30 @@ resource "aws_db_instance" "rds_postgres" {
   }
 }
 
+resource "aws_iam_policy" "secrets_manager_policy" {
+  name        = "secrets-manager-policy"
+  description = "Policy to allow access to Secrets Manager secrets"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "secrets_manager_policy_attachment" {
+  role       = data.aws_iam_role.existing_role.name
+  policy_arn = aws_iam_policy.secrets_manager_policy.arn
+}
+
 resource "aws_iam_role_policy_attachment" "rds_iam_auth_role_attachment" {
   role       = data.aws_iam_role.existing_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
