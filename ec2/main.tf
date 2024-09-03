@@ -266,6 +266,13 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   lifecycle {
     create_before_destroy = true
   }
+  
+}
+
+resource "aws_ssm_parameter" "asg_name" {
+  name  = "/asg/name"
+  type  = "String"
+  value = aws_autoscaling_group.ec2_autoscaling_group_name.name
 }
 
 data "aws_ecr_repository" "ecr_repo" {
