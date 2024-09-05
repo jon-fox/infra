@@ -240,15 +240,71 @@ data "template_file" "init" {
   }
 }
 
+resource "aws_autoscaling_policy" "scale_out_policy" {
+  name                   = "scale-out-policy"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
+}
+
+resource "aws_autoscaling_policy" "scale_in_policy" {
+  name                   = "scale-in-policy"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
+}
+
+resource "aws_cloudwatch_metric_alarm" "alb_request_count_high" {
+  alarm_name          = "ALBRequestCountAlarmHigh"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "RequestCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1  
+
+  dimensions = {
+    LoadBalancer = aws_lb.app_alb.arn_suffix
+  }
+
+  alarm_description = "Alarm when ALB request count exceeds 1"
+  alarm_actions = [
+    aws_autoscaling_policy.scale_out_policy.arn
+  ]
+}
+
+resource "aws_cloudwatch_metric_alarm" "alb_request_count_low" {
+  alarm_name          = "ALBRequestCountAlarmLow"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "RequestCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 0  # scale down when no requests are coming in
+
+  dimensions = {
+    LoadBalancer = aws_lb.app_alb.arn_suffix
+  }
+
+  alarm_description = "Alarm when ALB request count is 0"
+  alarm_actions = [
+    aws_autoscaling_policy.scale_in_policy.arn
+  ]
+}
+
 resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   launch_template {
     id      = aws_launch_template.ec2_launch_template.id
     version = "$Latest"
   }
 
-  min_size         = 1
+  min_size         = 0
   max_size         = 1
-  desired_capacity = 1
+  desired_capacity = 0
 
   target_group_arns = [aws_lb_target_group.app_tg.arn]
 
@@ -266,7 +322,6 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   lifecycle {
     create_before_destroy = true
   }
-  
 }
 
 resource "aws_ssm_parameter" "asg_name" {
