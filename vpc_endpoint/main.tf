@@ -18,6 +18,13 @@ resource "aws_security_group" "ssm_vpc_endpoint_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 data "aws_subnets" "selected_subnets" {
@@ -31,6 +38,15 @@ data "aws_subnets" "selected_subnets" {
 resource "aws_vpc_endpoint" "ssm" {
   vpc_id            = data.aws_ssm_parameter.vpc_id.value
   service_name      = "com.amazonaws.${var.region}.ssm"
+  subnet_ids        = data.aws_subnets.selected_subnets.ids
+  security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
+  vpc_endpoint_type = "Interface"
+  private_dns_enabled = true
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id            = data.aws_ssm_parameter.vpc_id.value
+  service_name      = "com.amazonaws.${var.region}.secretsmanager"
   subnet_ids        = data.aws_subnets.selected_subnets.ids
   security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
   vpc_endpoint_type = "Interface"
