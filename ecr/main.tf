@@ -2,6 +2,13 @@ provider "aws" {
   region = var.region
 }
 
+terraform {
+  backend "s3" {
+    key    = "terraform/ecr/terraform.tfstate"  # Path inside the bucket to store the state
+    region = "us-east-1"  # AWS region, e.g., us-west-2
+  }
+}
+
 # Create an ECR repository
 resource "aws_ecr_repository" "app_repo" {
   name = "app-ecr-repo"

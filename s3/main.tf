@@ -2,6 +2,13 @@ provider "aws" {
   region = var.region
 }
 
+terraform {
+  backend "s3" {
+    key    = "terraform/s3/terraform.tfstate"  # Path inside the bucket to store the state
+    region = "us-east-1"  # AWS region, e.g., us-west-2
+  }
+}
+
 data "aws_iam_role" "existing_role" {
   name = "docker-external-app"
 }

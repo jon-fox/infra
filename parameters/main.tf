@@ -2,6 +2,13 @@ provider "aws" {
   region = var.aws_region
 }
 
+terraform {
+  backend "s3" {
+    key    = "terraform/parameters/terraform.tfstate"  # Path inside the bucket to store the state
+    region = "us-east-1"  # AWS region, e.g., us-west-2
+  }
+}
+
 resource "aws_kms_key" "param_store_kms_key" {
   description = "KMS key for SSM parameters"
   policy      = <<POLICY

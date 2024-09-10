@@ -2,6 +2,13 @@ provider "aws" {
   region = "us-east-1"  # Change to your preferred AWS region
 }
 
+terraform {
+  backend "s3" {
+    key    = "terraform/rds/terraform.tfstate"  # Path inside the bucket to store the state
+    region = "us-east-1"  # AWS region, e.g., us-west-2
+  }
+}
+
 resource "random_password" "rds_master_password" {
   length           = 16
   special          = true

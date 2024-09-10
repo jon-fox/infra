@@ -2,6 +2,13 @@ provider "aws" {
   region = var.region
 }
 
+terraform {
+  backend "s3" {
+    key    = "terraform/scaling_lambda/terraform.tfstate"  # Path inside the bucket to store the state
+    region = "us-east-1"  # AWS region, e.g., us-west-2
+  }
+}
+
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_scaling_role" {
   name = "lambda_scaling_role"

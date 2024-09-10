@@ -15,3 +15,5 @@ variable "ami_id" {
   # default     = "ami-0123456789abcdef0"
   default     = "ami-075d39ebbca89ed55"
 }
+
+  # terraform init -backend-config="bucket="
