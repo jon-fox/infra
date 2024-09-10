@@ -53,32 +53,32 @@ data "aws_key_pair" "key_pair" {
 }
 
 
-resource "aws_security_group" "alb_sg" {
-  name        = "alb_sg"
-  description = "Allow inbound traffic"
-  vpc_id      = data.aws_ssm_parameter.vpc_id.value
+# resource "aws_security_group" "alb_sg" {
+#   name        = "alb_sg"
+#   description = "Allow inbound traffic"
+#   vpc_id      = data.aws_ssm_parameter.vpc_id.value
 
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   ingress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   ingress {
+#     from_port   = 80
+#     to_port     = 80
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
 
 data "aws_security_group" "rds_security_group" {
   name = "rds-sg"
@@ -89,25 +89,30 @@ resource "aws_security_group" "ec2_launch_template_sg" {
   description = "Allow inbound traffic from alb"
   vpc_id      = data.aws_ssm_parameter.vpc_id.value
 
+  # this will change to lambda sg
+
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
+    cidr_blocks = ["0.0.0.0/0"]
+    # security_groups = [aws_security_group.alb_sg.id]
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
+    cidr_blocks = ["0.0.0.0/0"]
+    # security_groups = [aws_security_group.alb_sg.id]
   }
 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
+    cidr_blocks = ["0.0.0.0/0"]
+    # security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
@@ -151,54 +156,54 @@ resource "aws_iam_instance_profile" "ec2_role" {
 #   }
 # }
 
-resource "aws_lb" "app_alb" {
-  name               = "app-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.aws_subnets.selected_vpc_subnets.ids
+# resource "aws_lb" "app_alb" {
+#   name               = "app-alb"
+#   internal           = false
+#   load_balancer_type = "application"
+#   security_groups    = [aws_security_group.alb_sg.id]
+#   subnets            = data.aws_subnets.selected_vpc_subnets.ids
 
-  enable_deletion_protection = false
+#   enable_deletion_protection = false
 
-  tags = {
-    Name = "app-alb"
-  }
-}
+#   tags = {
+#     Name = "app-alb"
+#   }
+# }
 
-resource "aws_lb_target_group" "app_tg" {
-  name     = "app-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.aws_ssm_parameter.vpc_id.value
+# resource "aws_lb_target_group" "app_tg" {
+#   name     = "app-tg"
+#   port     = 80
+#   protocol = "HTTP"
+#   vpc_id   = data.aws_ssm_parameter.vpc_id.value
 
-  health_check {
-    path                = "/"
-    port                = 8080
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    matcher             = "200"
-  }
+#   health_check {
+#     path                = "/"
+#     port                = 8080
+#     interval            = 30
+#     timeout             = 5
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     matcher             = "200"
+#   }
 
-  tags = {
-    Name = "app-tg"
-  }
-}
+#   tags = {
+#     Name = "app-tg"
+#   }
+# }
 
-resource "aws_lb_listener" "https_listener" {
-  load_balancer_arn = aws_lb.app_alb.arn
-  port              = 443
-  protocol          = "HTTPS"
+# resource "aws_lb_listener" "https_listener" {
+#   load_balancer_arn = aws_lb.app_alb.arn
+#   port              = 443
+#   protocol          = "HTTPS"
 
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = data.aws_ssm_parameter.acm_certificate_arn.value
+#   ssl_policy        = "ELBSecurityPolicy-2016-08"
+#   certificate_arn   = data.aws_ssm_parameter.acm_certificate_arn.value
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app_tg.arn
-  }
-}
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.app_tg.arn
+#   }
+# }
 
 
 resource "aws_launch_template" "ec2_launch_template" {
@@ -240,61 +245,61 @@ data "template_file" "init" {
   }
 }
 
-resource "aws_autoscaling_policy" "scale_out_policy" {
-  name                   = "scale-out-policy"
-  scaling_adjustment     = 1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
-}
+# resource "aws_autoscaling_policy" "scale_out_policy" {
+#   name                   = "scale-out-policy"
+#   scaling_adjustment     = 1
+#   adjustment_type        = "ChangeInCapacity"
+#   cooldown               = 300
+#   autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
+# }
 
-resource "aws_autoscaling_policy" "scale_in_policy" {
-  name                   = "scale-in-policy"
-  scaling_adjustment     = -1
-  adjustment_type        = "ChangeInCapacity"
-  cooldown               = 300
-  autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
-}
+# resource "aws_autoscaling_policy" "scale_in_policy" {
+#   name                   = "scale-in-policy"
+#   scaling_adjustment     = -1
+#   adjustment_type        = "ChangeInCapacity"
+#   cooldown               = 300
+#   autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
+# }
 
-resource "aws_cloudwatch_metric_alarm" "alb_request_count_high" {
-  alarm_name          = "ALBRequestCountAlarmHigh"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "RequestCount"
-  namespace           = "AWS/ApplicationELB"
-  period              = 300
-  statistic           = "Sum"
-  threshold           = 1  
+# resource "aws_cloudwatch_metric_alarm" "alb_request_count_high" {
+#   alarm_name          = "ALBRequestCountAlarmHigh"
+#   comparison_operator = "GreaterThanThreshold"
+#   evaluation_periods  = 1
+#   metric_name         = "RequestCount"
+#   namespace           = "AWS/ApplicationELB"
+#   period              = 300
+#   statistic           = "Sum"
+#   threshold           = 1  
 
-  dimensions = {
-    LoadBalancer = aws_lb.app_alb.arn_suffix
-  }
+#   dimensions = {
+#     LoadBalancer = aws_lb.app_alb.arn_suffix
+#   }
 
-  alarm_description = "Alarm when ALB request count exceeds 1"
-  alarm_actions = [
-    aws_autoscaling_policy.scale_out_policy.arn
-  ]
-}
+#   alarm_description = "Alarm when ALB request count exceeds 1"
+#   alarm_actions = [
+#     aws_autoscaling_policy.scale_out_policy.arn
+#   ]
+# }
 
-resource "aws_cloudwatch_metric_alarm" "alb_request_count_low" {
-  alarm_name          = "ALBRequestCountAlarmLow"
-  comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = 1
-  metric_name         = "RequestCount"
-  namespace           = "AWS/ApplicationELB"
-  period              = 300
-  statistic           = "Sum"
-  threshold           = 0  # scale down when no requests are coming in
+# resource "aws_cloudwatch_metric_alarm" "alb_request_count_low" {
+#   alarm_name          = "ALBRequestCountAlarmLow"
+#   comparison_operator = "LessThanOrEqualToThreshold"
+#   evaluation_periods  = 1
+#   metric_name         = "RequestCount"
+#   namespace           = "AWS/ApplicationELB"
+#   period              = 300
+#   statistic           = "Sum"
+#   threshold           = 0  # scale down when no requests are coming in
 
-  dimensions = {
-    LoadBalancer = aws_lb.app_alb.arn_suffix
-  }
+#   dimensions = {
+#     LoadBalancer = aws_lb.app_alb.arn_suffix
+#   }
 
-  alarm_description = "Alarm when ALB request count is 0"
-  alarm_actions = [
-    aws_autoscaling_policy.scale_in_policy.arn
-  ]
-}
+#   alarm_description = "Alarm when ALB request count is 0"
+#   alarm_actions = [
+#     aws_autoscaling_policy.scale_in_policy.arn
+#   ]
+# }
 
 resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   launch_template {
@@ -303,10 +308,10 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   }
 
   min_size         = 0
-  max_size         = 1
+  max_size         = 0
   desired_capacity = 0
 
-  target_group_arns = [aws_lb_target_group.app_tg.arn]
+  # target_group_arns = [aws_lb_target_group.app_tg.arn]
 
   vpc_zone_identifier =  data.aws_subnets.selected_vpc_subnets.ids
 
@@ -316,8 +321,8 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
     propagate_at_launch = true
   }
 
-  health_check_type         = "EC2"
-  health_check_grace_period = 300
+  # health_check_type         = "EC2"
+  # health_check_grace_period = 300
 
   lifecycle {
     create_before_destroy = true
