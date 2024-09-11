@@ -60,6 +60,29 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   private_dns_enabled = true
 }
 
+resource "aws_vpc_endpoint" "s3_gateway" {
+  vpc_id       = data.aws_ssm_parameter.vpc_id.value
+  service_name = "com.amazonaws.us-east-1.s3"  # Adjust based on your AWS region
+
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.public.id]  # Ensure your route table is associated with the subnets that need S3 access
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = data.aws_ssm_parameter.vpc_id.value
+}
+
+resource "aws_route_table_association" "public_association" {
+  subnet_id      = data.aws_subnets.selected_subnets.ids[0]
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_association_2" {
+  subnet_id      = data.aws_subnets.selected_subnets.ids[1]
+  route_table_id = aws_route_table.public.id
+}
+
+
 # Uncomment the following code block to create VPC endpoints for SSM Messages and EC2 Messages
 # resource "aws_vpc_endpoint" "ssm_messages" {
 #   vpc_id            = data.aws_ssm_parameter.vpc_id.value

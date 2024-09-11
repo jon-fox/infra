@@ -17,6 +17,10 @@ data "http" "my_ip" {
   url = "http://checkip.amazonaws.com/"
 }
 
+data "aws_ssm_parameter" "docker_image_uri" {
+  name = "/account/docker_image_uri"  
+}
+
 data "aws_ssm_parameter" "ami" {
   name = "/account/ec2/ami"  
 }
@@ -59,33 +63,6 @@ data "aws_key_pair" "key_pair" {
   key_name = data.aws_ssm_parameter.key_pair_name.value
 }
 
-
-# resource "aws_security_group" "alb_sg" {
-#   name        = "alb_sg"
-#   description = "Allow inbound traffic"
-#   vpc_id      = data.aws_ssm_parameter.vpc_id.value
-
-#   ingress {
-#     from_port   = 443
-#     to_port     = 443
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   ingress {
-#     from_port   = 80
-#     to_port     = 80
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-# }
 
 data "aws_security_group" "rds_security_group" {
   name = "rds-sg"
@@ -163,55 +140,6 @@ resource "aws_iam_instance_profile" "ec2_role" {
 #   }
 # }
 
-# resource "aws_lb" "app_alb" {
-#   name               = "app-alb"
-#   internal           = false
-#   load_balancer_type = "application"
-#   security_groups    = [aws_security_group.alb_sg.id]
-#   subnets            = data.aws_subnets.selected_vpc_subnets.ids
-
-#   enable_deletion_protection = false
-
-#   tags = {
-#     Name = "app-alb"
-#   }
-# }
-
-# resource "aws_lb_target_group" "app_tg" {
-#   name     = "app-tg"
-#   port     = 80
-#   protocol = "HTTP"
-#   vpc_id   = data.aws_ssm_parameter.vpc_id.value
-
-#   health_check {
-#     path                = "/"
-#     port                = 8080
-#     interval            = 30
-#     timeout             = 5
-#     healthy_threshold   = 2
-#     unhealthy_threshold = 2
-#     matcher             = "200"
-#   }
-
-#   tags = {
-#     Name = "app-tg"
-#   }
-# }
-
-# resource "aws_lb_listener" "https_listener" {
-#   load_balancer_arn = aws_lb.app_alb.arn
-#   port              = 443
-#   protocol          = "HTTPS"
-
-#   ssl_policy        = "ELBSecurityPolicy-2016-08"
-#   certificate_arn   = data.aws_ssm_parameter.acm_certificate_arn.value
-
-#   default_action {
-#     type             = "forward"
-#     target_group_arn = aws_lb_target_group.app_tg.arn
-#   }
-# }
-
 
 resource "aws_launch_template" "ec2_launch_template" {
   image_id      = data.aws_ssm_parameter.ami.value
@@ -252,62 +180,6 @@ data "template_file" "init" {
   }
 }
 
-# resource "aws_autoscaling_policy" "scale_out_policy" {
-#   name                   = "scale-out-policy"
-#   scaling_adjustment     = 1
-#   adjustment_type        = "ChangeInCapacity"
-#   cooldown               = 300
-#   autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
-# }
-
-# resource "aws_autoscaling_policy" "scale_in_policy" {
-#   name                   = "scale-in-policy"
-#   scaling_adjustment     = -1
-#   adjustment_type        = "ChangeInCapacity"
-#   cooldown               = 300
-#   autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
-# }
-
-# resource "aws_cloudwatch_metric_alarm" "alb_request_count_high" {
-#   alarm_name          = "ALBRequestCountAlarmHigh"
-#   comparison_operator = "GreaterThanThreshold"
-#   evaluation_periods  = 1
-#   metric_name         = "RequestCount"
-#   namespace           = "AWS/ApplicationELB"
-#   period              = 300
-#   statistic           = "Sum"
-#   threshold           = 1  
-
-#   dimensions = {
-#     LoadBalancer = aws_lb.app_alb.arn_suffix
-#   }
-
-#   alarm_description = "Alarm when ALB request count exceeds 1"
-#   alarm_actions = [
-#     aws_autoscaling_policy.scale_out_policy.arn
-#   ]
-# }
-
-# resource "aws_cloudwatch_metric_alarm" "alb_request_count_low" {
-#   alarm_name          = "ALBRequestCountAlarmLow"
-#   comparison_operator = "LessThanOrEqualToThreshold"
-#   evaluation_periods  = 1
-#   metric_name         = "RequestCount"
-#   namespace           = "AWS/ApplicationELB"
-#   period              = 300
-#   statistic           = "Sum"
-#   threshold           = 0  # scale down when no requests are coming in
-
-#   dimensions = {
-#     LoadBalancer = aws_lb.app_alb.arn_suffix
-#   }
-
-#   alarm_description = "Alarm when ALB request count is 0"
-#   alarm_actions = [
-#     aws_autoscaling_policy.scale_in_policy.arn
-#   ]
-# }
-
 resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   launch_template {
     id      = aws_launch_template.ec2_launch_template.id
@@ -322,6 +194,14 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
 
   vpc_zone_identifier =  data.aws_subnets.selected_vpc_subnets.ids
 
+  termination_policies = ["OldestInstance", "ClosestToNextInstanceHour"]
+
+  protect_from_scale_in = true 
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tag {
     key                 = "Name"
     value               = data.aws_ssm_parameter.ec2_name.value
@@ -330,10 +210,6 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
 
   # health_check_type         = "EC2"
   # health_check_grace_period = 300
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_ssm_parameter" "asg_name" {
@@ -374,3 +250,175 @@ data "aws_iam_policy_document" "ecr_policy" {
 #   autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
 #   alb_target_group_arn   = aws_lb_target_group.ec2_lb_target_group.arn  
 # }
+
+############################# ECS ##############################
+
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = "app-cluster"
+}
+
+resource "aws_ecs_capacity_provider" "gpu_capacity_provider" {
+  name = "gpu-ecs-capacity-provider"
+
+  auto_scaling_group_provider {
+    auto_scaling_group_arn         = aws_autoscaling_group.ec2_autoscaling_group_name.arn
+    managed_termination_protection = "ENABLED"
+
+    managed_scaling {
+      status                    = "ENABLED"
+      target_capacity           = 100 # target of cpu usage before scaling
+      minimum_scaling_step_size = 1 # number of instances to scale up by
+      maximum_scaling_step_size = 1 # max number of instances to scale up by
+    }
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "ecs_capacity" {
+  cluster_name          = aws_ecs_cluster.ecs_cluster.name
+  capacity_providers    = [aws_ecs_capacity_provider.gpu_capacity_provider.name]
+  default_capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.gpu_capacity_provider.name
+    weight            = 1
+  }
+}
+
+resource "aws_ecs_task_definition" "gpu_task" {
+  family                   = "gpu-task"
+  execution_role_arn        = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn             = aws_iam_role.ecs_task_role.arn
+  network_mode              = "awsvpc"
+  requires_compatibilities  = ["EC2"]
+  # cpu                       = "512"
+  # memory                    = "4096"
+
+  container_definitions = jsonencode([
+    {
+      name      = "gpu-container",
+      image     = data.aws_ssm_parameter.docker_image_uri.value,
+      memory    = 14336   # 14 GB, 1gb is 1024
+      cpu       = 3072    # 3 vCPUs, 1 cpu is 1024 :)
+      essential = true,
+      environment = [
+        {
+          name  = "ENV_VAR"
+          value = "your-value"
+        }
+      ],
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          "awslogs-group"         = "gpu-task-logs"
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      },
+        resourceRequirements = [
+        {
+          type  = "GPU",
+          value = "1" # Number of GPUs 
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "ecs_service" {
+  name            = "ecs-app-service"
+  cluster         = aws_ecs_cluster.ecs_cluster.id
+  task_definition = aws_ecs_task_definition.gpu_task.arn
+
+  network_configuration {
+    subnets         = data.aws_subnets.selected_vpc_subnets.ids
+    security_groups = [aws_security_group.ec2_launch_template_sg.id]  # Reuse the SG here
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+
+
+############################# ECS ROLE ##############################
+
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "ecs_task_policy" {
+  name   = "ecsTaskPolicy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ],
+        Resource = "arn:aws:s3:::my-bucket/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:Connect"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_role_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_task_policy.arn
+}
+
+################## ECS Execution Role ##################
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "ecs-task-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+data "aws_iam_policy" "existing_ecr_policy" {
+  name = "ECRAccessPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ecr_policy_attachment" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = data.aws_iam_policy.existing_ecr_policy.arn
+}
