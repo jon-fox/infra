@@ -17,6 +17,10 @@ data "aws_iam_role" "existing_role_lambda" {
   name = "lambda_execution_role"
 }
 
+data "aws_ssm_parameter" "account_id" {
+  name = "/account/account_id"
+}
+
 data "aws_ssm_parameter" "config_bucket_name" {
   name = "/account/config_bucket_name"
 }
@@ -114,20 +118,22 @@ resource "aws_s3_bucket_policy" "app_storage_bucket_policy_cloudfront" {
   bucket = aws_s3_bucket.app_storage_bucket.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::cloudfront:user/CloudFrontOriginAccessIdentity/${aws_cloudfront_origin_access_identity.oai.id}"
+    "Version": "2012-10-17",
+    "Statement": {
+        "Sid": "AllowCloudFrontServicePrincipalReadOnly",
+        "Effect": "Allow",
+        "Principal": {
+            "Service": "cloudfront.amazonaws.com"
+        },
+        "Action": "s3:GetObject",
+        "Resource": "${aws_s3_bucket.app_storage_bucket.arn}/*",
+        "Condition": {
+            "StringEquals": {
+                "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}"
+            }
         }
-        Action = "s3:GetObject"
-        Resource = [
-          "${aws_s3_bucket.app_storage_bucket.arn}/*"
-        ]
-      }
-    ]
-  })
+    }
+} )
 }
 
 # Step 3: Create CloudFront Distribution
