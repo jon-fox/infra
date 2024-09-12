@@ -180,3 +180,9 @@ resource "aws_cloudfront_distribution" "cdn" {
     cloudfront_default_certificate = true
   }
 }
+
+resource "aws_ssm_parameter" "cloudfront_distribution_id" {
+  name  = "/cloudfront/distribution/id"
+  type  = "String"
+  value = aws_cloudfront_distribution.cdn.id
+}
