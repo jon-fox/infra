@@ -186,3 +186,9 @@ resource "aws_ssm_parameter" "cloudfront_distribution_id" {
   type  = "String"
   value = aws_cloudfront_distribution.cdn.id
 }
+
+resource "aws_ssm_parameter" "cloudfront_distribution_url" {
+  name  = "/cloudfront/distribution/url"
+  type  = "String"
+  value = "https://${aws_cloudfront_distribution.cdn.domain_name}"
+}
