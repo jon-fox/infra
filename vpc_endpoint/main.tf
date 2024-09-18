@@ -52,34 +52,34 @@ resource "aws_vpc_endpoint" "ssm" {
 }
 
 # for messenger service, required for session manager
-resource "aws_vpc_endpoint" "ssmmessages" {
-  vpc_id            = data.aws_ssm_parameter.vpc_id.value
-  service_name      = "com.amazonaws.${var.region}.ssmmessages"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = data.aws_subnets.selected_subnets.ids
-  security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
+# resource "aws_vpc_endpoint" "ssmmessages" {
+#   vpc_id            = data.aws_ssm_parameter.vpc_id.value
+#   service_name      = "com.amazonaws.${var.region}.ssmmessages"
+#   vpc_endpoint_type = "Interface"
+#   subnet_ids        = data.aws_subnets.selected_subnets.ids
+#   security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
 
-  private_dns_enabled = true
+#   private_dns_enabled = true
 
-  tags = {
-    Name = "SSM Messages VPC Endpoint"
-  }
-}
+#   tags = {
+#     Name = "SSM Messages VPC Endpoint"
+#   }
+# }
 
-# for ec2 and session manager communication
-resource "aws_vpc_endpoint" "ec2messages" {
-  vpc_id            = data.aws_ssm_parameter.vpc_id.value
-  service_name      = "com.amazonaws.${var.region}.ec2messages"
-  vpc_endpoint_type = "Interface"
-  subnet_ids        = data.aws_subnets.selected_subnets.ids
-  security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
+# # for ec2 and session manager communication
+# resource "aws_vpc_endpoint" "ec2messages" {
+#   vpc_id            = data.aws_ssm_parameter.vpc_id.value
+#   service_name      = "com.amazonaws.${var.region}.ec2messages"
+#   vpc_endpoint_type = "Interface"
+#   subnet_ids        = data.aws_subnets.selected_subnets.ids
+#   security_group_ids = [aws_security_group.ssm_vpc_endpoint_sg.id]
 
-  private_dns_enabled = true
+#   private_dns_enabled = true
 
-  tags = {
-    Name = "EC2 Messages VPC Endpoint"
-  }
-}
+#   tags = {
+#     Name = "EC2 Messages VPC Endpoint"
+#   }
+# }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
   vpc_id            = data.aws_ssm_parameter.vpc_id.value
