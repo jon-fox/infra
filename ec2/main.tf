@@ -288,44 +288,20 @@ resource "aws_ecs_task_definition" "gpu_task" {
   task_role_arn             = aws_iam_role.ecs_task_role.arn
   network_mode              = "awsvpc"
   requires_compatibilities  = ["EC2"]
-  # cpu                       = "512"
-  # memory                    = "4096"
 
-  container_definitions = jsonencode([
-    {
-      name      = "gpu-container",
-      image     = data.aws_ssm_parameter.docker_image_uri.value,
-      memory    = 14336   # 14 GB, 1gb is 1024
-      cpu       = 3072    # 3 vCPUs, 1 cpu is 1024 :)
-      essential = true,
-      environment = [
-        {
-          name  = "ENV_VAR"
-          value = "your-value"
-        }
-      ],
-      logConfiguration = {
-        logDriver = "awslogs",
-        options = {
-          "awslogs-group"         = "gpu-task-logs"
-          "awslogs-region"        = var.region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      },
-        resourceRequirements = [
-        {
-          type  = "GPU",
-          value = "1" # Number of GPUs 
-        }
-      ]
-    }
-  ])
+  container_definitions = file("task-definition.json")
+  
 }
 
 resource "aws_ecs_service" "ecs_service" {
   name            = "ecs-app-service"
   cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.gpu_task.arn
+
+  capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.gpu_capacity_provider.name
+    weight            = 1
+  }
 
   network_configuration {
     subnets         = data.aws_subnets.selected_vpc_subnets.ids
