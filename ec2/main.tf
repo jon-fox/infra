@@ -303,10 +303,10 @@ resource "aws_ecs_service" "ecs_service" {
     weight            = 1
   }
 
-  network_configuration {
-    subnets         = data.aws_subnets.selected_vpc_subnets.ids
-    security_groups = [aws_security_group.ec2_launch_template_sg.id]  # Reuse the SG here
-  }
+  # network_configuration {
+  #   subnets         = data.aws_subnets.selected_vpc_subnets.ids
+  #   security_groups = [aws_security_group.ec2_launch_template_sg.id]  # Reuse the SG here
+  # }
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
