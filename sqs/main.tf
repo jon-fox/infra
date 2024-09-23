@@ -4,11 +4,28 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    key    = "terraform/ec2/terraform.tfstate"  # Path inside the bucket to store the state
+    key    = "terraform/sqs/terraform.tfstate"  # Path inside the bucket to store the state
     region = "us-east-1"  # AWS region, e.g., us-west-2
   }
 }
 
-data "aws_ssm_parameter" "vpc_id" {
-  name = "/account/vpc_id"  
+# data "aws_ssm_parameter" "vpc_id" {
+#   name = "/account/vpc_id"  
+# }
+
+resource "aws_sqs_queue" "sqs_queue" {
+  name                      = "audio-processing-queue.fifo"
+  fifo_queue                = true
+  visibility_timeout_seconds = 600 # how long the message is invisible after it is being processed
+  message_retention_seconds  = 86400 # retention
+  delay_seconds              = 0 # delay of message visibility to consumers
+  max_message_size           = 262144
+  receive_wait_time_seconds  = 10 # how long sqs waits to return response, > 0 is long polling
+  content_based_deduplication = true # prevents dupe messages
+}
+
+resource "aws_ssm_parameter" "sqs_queue_url" {
+  name  = "/sqs/audio_processing/url"
+  type  = "String"
+  value = aws_sqs_queue.sqs_queue.id
 }
