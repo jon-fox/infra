@@ -142,8 +142,8 @@ resource "aws_iam_instance_profile" "ec2_role" {
 
 
 resource "aws_launch_template" "ec2_launch_template" {
-  # image_id      = data.aws_ssm_parameter.ami.value
-  image_id      = var.ami_id
+  image_id      = data.aws_ssm_parameter.ami.value
+  # image_id      = var.ami_id
   instance_type = var.instance_type
   # instance_type = "t2.nano"
 
