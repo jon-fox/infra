@@ -172,6 +172,7 @@ resource "aws_launch_template" "ec2_launch_template" {
 
 data "template_file" "init" {
   template = "${file("${path.module}/user_data.sh")}"
+  # template = "${file("${path.module}/user_data_nvidia.sh")}"
   vars = {
     # region         = var.region,
     # repository_url = data.aws_ecr_repository.ecr_repo.repository_url,
