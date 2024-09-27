@@ -29,3 +29,9 @@ resource "aws_ssm_parameter" "sqs_queue_url" {
   type  = "String"
   value = aws_sqs_queue.sqs_queue.id
 }
+
+resource "aws_ssm_parameter" "sqs_queue_name" {
+  name  = "/sqs/audio_processing/name"
+  type  = "String"
+  value = aws_sqs_queue.sqs_queue.name
+}
