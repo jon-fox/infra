@@ -294,6 +294,8 @@ resource "aws_cloudwatch_metric_alarm" "sqs_queue_length_alarm" {
     QueueName = data.aws_ssm_parameter.sqs_name.value
   }
 
+  treat_missing_data = "notBreaching" # leave alarm in OK state if insufficient data
+
   alarm_actions = [aws_autoscaling_policy.step_scaling_policy.arn]
   ok_actions    = [aws_autoscaling_policy.scale_in_policy.arn]
 }
