@@ -286,7 +286,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_queue_length_alarm" {
   evaluation_periods  = 1
   metric_name         = "ApproximateNumberOfMessagesVisible"
   namespace           = "AWS/SQS"
-  period              = 120  # 2 minutes
+  period              = 60  # 1 minute
   statistic           = "Average"
   threshold           = 1    # Trigger alarm when there's at least 1 message
   alarm_description   = "Alarm when SQS queue length exceeds 1 message"
