@@ -133,21 +133,18 @@ resource "aws_s3_bucket_policy" "app_storage_bucket_policy_cloudfront" {
 
   policy = jsonencode({
     "Version": "2012-10-17",
-    "Statement": {
+    "Statement": [
+      {
         "Sid": "AllowCloudFrontServicePrincipalReadOnly",
         "Effect": "Allow",
         "Principal": {
-            "Service": "cloudfront.amazonaws.com"
+          "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${aws_cloudfront_origin_access_identity.oai.id}"
         },
         "Action": "s3:GetObject",
-        "Resource": "${aws_s3_bucket.app_storage_bucket.arn}/*",
-        "Condition": {
-            "StringEquals": {
-                "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}"
-            }
-        }
-    }
-} )
+        "Resource": "${aws_s3_bucket.app_storage_bucket.arn}/*"
+      }
+    ]
+  })
 }
 
 # Step 3: Create CloudFront Distribution
