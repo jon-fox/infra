@@ -37,6 +37,20 @@ resource "aws_s3_bucket" "app_bucket" {
   bucket = data.aws_ssm_parameter.config_bucket_name.value
 }
 
+# Resource to avoid error "AccessControlListNotSupported: The bucket does not allow ACLs"
+resource "aws_s3_bucket_ownership_controls" "s3_bucket_acl_ownership" {
+  bucket = aws_s3_bucket.app_bucket.id
+  rule {
+    object_ownership = "ObjectWriter"
+  }
+}
+
+resource "aws_s3_bucket_acl" "bucket_acl" {
+  bucket = aws_s3_bucket.app_bucket.id
+  acl = "log-delivery-write"
+  depends_on = [aws_s3_bucket_ownership_controls.s3_bucket_acl_ownership]
+}
+
 resource "aws_s3_bucket" "app_storage_bucket" {
   bucket = data.aws_ssm_parameter.storage_bucket_name.value
 }
@@ -179,6 +193,14 @@ resource "aws_cloudfront_distribution" "cdn" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+
+  logging_config {
+    bucket = "${data.aws_ssm_parameter.config_bucket_name.value}.s3.amazonaws.com"
+    prefix = "cloudfront-logs/"
+    include_cookies = false
+  }
+
+  depends_on = [ aws_s3_bucket_acl.bucket_acl ]
 }
 
 resource "aws_ssm_parameter" "cloudfront_distribution_id" {
@@ -191,4 +213,31 @@ resource "aws_ssm_parameter" "cloudfront_distribution_url" {
   name  = "/cloudfront/distribution/url"
   type  = "String"
   value = "https://${aws_cloudfront_distribution.cdn.domain_name}"
+}
+
+resource "aws_s3_bucket_policy" "log_bucket_policy" {
+  bucket = data.aws_ssm_parameter.config_bucket_name.value
+
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "cloudfront.amazonaws.com"
+        },
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        "Resource": "${aws_s3_bucket.app_bucket.arn}/*",
+        "Condition": {
+          "StringEquals": {
+            "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}"
+          }
+        }
+      }
+    ]
+  })
 }
