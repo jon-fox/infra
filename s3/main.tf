@@ -212,6 +212,10 @@ resource "aws_ssm_parameter" "cloudfront_distribution_url" {
   value = "https://${aws_cloudfront_distribution.cdn.domain_name}"
 }
 
+data "aws_ssm_parameter" "web_cloudfront_distribution_id" {
+  name = "/cloudfront/web_distribution/id"
+}
+
 resource "aws_s3_bucket_policy" "log_bucket_policy" {
   bucket = data.aws_ssm_parameter.config_bucket_name.value
 
@@ -230,8 +234,11 @@ resource "aws_s3_bucket_policy" "log_bucket_policy" {
         ],
         "Resource": "${aws_s3_bucket.app_bucket.arn}/*",
         "Condition": {
-          "StringEquals": {
-            "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}"
+          "ArnLike": {
+            "AWS:SourceArn": [
+              "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}",
+              "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${data.aws_ssm_parameter.web_cloudfront_distribution_id.value}",
+            ]
           }
         }
       }
