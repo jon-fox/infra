@@ -217,18 +217,16 @@ resource "aws_s3_bucket_policy" "log_bucket_policy" {
         "Principal": {
           "Service": "cloudfront.amazonaws.com"
         },
-        "Action": "s3:GetObject",
+        "Action": "s3:PutObject",
         "Resource": "${aws_s3_bucket.app_bucket.arn}/*",
         "Condition": {
           "StringLike": {
-              "AWS:SourceArn": [
-                "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${aws_cloudfront_origin_access_identity.oai.id}",
-                "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${data.aws_ssm_parameter.web_cloudfront_distribution_id.value}"
-              ]
+            "AWS:SourceArn": "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/*"
           }
         }
       }
     ]
   })
 }
+
 
