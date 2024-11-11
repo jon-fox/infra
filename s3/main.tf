@@ -55,31 +55,6 @@ resource "aws_s3_bucket" "app_storage_bucket" {
   bucket = data.aws_ssm_parameter.storage_bucket_name.value
 }
 
-resource "aws_s3_bucket_policy" "app_bucket_policy" {
-  bucket = aws_s3_bucket.app_bucket.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          AWS = data.aws_iam_role.existing_role.arn
-        }
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          "${aws_s3_bucket.app_bucket.arn}",
-          "${aws_s3_bucket.app_bucket.arn}/*"
-        ]
-      }
-    ]
-  })
-}
-
 resource "aws_iam_policy" "s3_access_policy" {
   name        = "S3AccessPolicy"
   description = "Policy to allow access to the S3 bucket"
@@ -128,7 +103,7 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 }
 
 # Step 2: Update S3 Bucket Policy for CloudFront Access
-resource "aws_s3_bucket_policy" "app_storage_bucket_policy_cloudfront" {
+resource "aws_s3_bucket_policy" "app_storage_bucket_policy" {
   bucket = aws_s3_bucket.app_storage_bucket.id
 
   policy = jsonencode({
@@ -142,6 +117,21 @@ resource "aws_s3_bucket_policy" "app_storage_bucket_policy_cloudfront" {
         },
         "Action": "s3:GetObject",
         "Resource": "${aws_s3_bucket.app_storage_bucket.arn}/*"
+      },
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "${data.aws_iam_role.existing_role.arn}"
+        },
+        "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        "Resource": [
+          "${aws_s3_bucket.app_storage_bucket.arn}",
+          "${aws_s3_bucket.app_storage_bucket.arn}/*"
+        ]
       }
     ]
   })
@@ -217,7 +207,7 @@ data "aws_ssm_parameter" "web_cloudfront_distribution_id" {
 }
 
 resource "aws_s3_bucket_policy" "log_bucket_policy" {
-  bucket = data.aws_ssm_parameter.config_bucket_name.value
+  bucket = aws_s3_bucket.app_bucket.id
 
   policy = jsonencode({
     "Version": "2012-10-17",
@@ -227,21 +217,18 @@ resource "aws_s3_bucket_policy" "log_bucket_policy" {
         "Principal": {
           "Service": "cloudfront.amazonaws.com"
         },
-        "Action": [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ],
+        "Action": "s3:GetObject",
         "Resource": "${aws_s3_bucket.app_bucket.arn}/*",
         "Condition": {
-          "ArnLike": {
-            "AWS:SourceArn": [
-              "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${aws_cloudfront_distribution.cdn.id}",
-              "arn:aws:cloudfront::${data.aws_ssm_parameter.account_id.value}:distribution/${data.aws_ssm_parameter.web_cloudfront_distribution_id.value}",
-            ]
+          "StringLike": {
+              "AWS:SourceArn": [
+                "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${aws_cloudfront_origin_access_identity.oai.id}",
+                "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${data.aws_ssm_parameter.web_cloudfront_distribution_id.value}"
+              ]
           }
         }
       }
     ]
   })
 }
+
