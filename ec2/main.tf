@@ -163,7 +163,7 @@ resource "aws_launch_template" "ec2_launch_template" {
     block_device_mappings {
     device_name = "/dev/xvda"  # Root volume
     ebs {
-      volume_size           = 40  # Root volume size in GB
+      volume_size           = 60  # Root volume size in GB, needs to match ami
       volume_type           = "gp2"
       delete_on_termination = true
     }
