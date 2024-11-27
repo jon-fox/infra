@@ -46,6 +46,7 @@ resource "aws_iam_policy" "lambda_scaling_policy" {
         Action = [
           "autoscaling:SetDesiredCapacity",
           "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:UpdateAutoScalingGroup",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
