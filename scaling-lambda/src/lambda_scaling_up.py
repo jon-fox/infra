@@ -42,6 +42,10 @@ def lambda_handler(event, context):
     # Ensure the desired capacity is within bounds
     desired_capacity = max(min_size, min(required_instances, max_size))
     
+    # if no instances and queue length is greater than 1, start with 1 instance
+    if current_capacity == 0 and queue_length > 1:
+        desired_capacity = 1
+
     # Update the ASG if the capacity needs adjustment
     if desired_capacity != current_capacity:
         autoscaling.update_auto_scaling_group(

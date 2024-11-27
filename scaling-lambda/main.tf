@@ -54,7 +54,9 @@ resource "aws_iam_policy" "lambda_scaling_policy" {
           "logs:PutLogEvents",
           "sns:Publish",
           "sns:ListTopics",
-          "sns:Subscribe"
+          "sns:Subscribe",
+          "ssm:GetParameter",
+          "ssm:GetParameters"
         ],
         Resource = "*"
       }
@@ -71,7 +73,7 @@ resource "aws_lambda_function" "scaling_function_up" {
   filename         = "${path.module}/src/lambda_scaling_up.zip"
   function_name    = "scaling_function_up"
   role             = aws_iam_role.lambda_scaling_role.arn
-  handler          = "src.lambda_scaling_up.lambda_handler"
+  handler          = "lambda_scaling_up.lambda_handler"
   runtime          = "python3.10"
   source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_up.zip")
   
@@ -86,7 +88,7 @@ resource "aws_lambda_function" "scaling_function_down" {
   filename         = "${path.module}/src/lambda_scaling_down.zip"
   function_name    = "scaling_function_down"
   role             = aws_iam_role.lambda_scaling_role.arn
-  handler          = "src.lambda_scaling_down.lambda_handler"
+  handler          = "lambda_scaling_down.lambda_handler"
   runtime          = "python3.10"
   source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_down.zip")
   
