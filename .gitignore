@@ -13,3 +13,4 @@ ec2/key/transcription_key.pem
 rds/nohup.out
 ec2/task-definition.json
 **/nohup.out
+**/*.zip

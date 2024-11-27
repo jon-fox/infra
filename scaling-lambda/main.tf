@@ -4,12 +4,19 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    key    = "terraform/scaling_lambda/terraform.tfstate"  # Path inside the bucket to store the state
-    region = "us-east-1"  # AWS region, e.g., us-west-2
+    key    = "terraform/scaling_lambda/terraform.tfstate"
+    region = "us-east-1"
   }
 }
 
-# IAM Role for Lambda
+data "aws_ssm_parameter" "sqs_name" {
+  name = "/sqs/audio_processing/name"
+}
+
+data "aws_ssm_parameter" "asg_name" {
+  name = "/asg/name"
+}
+
 resource "aws_iam_role" "lambda_scaling_role" {
   name = "lambda_scaling_role"
   
@@ -27,7 +34,6 @@ resource "aws_iam_role" "lambda_scaling_role" {
   })
 }
 
-# IAM Policy for Scaling
 resource "aws_iam_policy" "lambda_scaling_policy" {
   name        = "lambda_scaling_policy"
   description = "Policy for scaling Auto Scaling group via Lambda"
@@ -39,16 +45,16 @@ resource "aws_iam_policy" "lambda_scaling_policy" {
         Effect = "Allow",
         Action = [
           "autoscaling:SetDesiredCapacity",
-          "autoscaling:DescribeAutoScalingGroups"
-        ],
-        Resource = "*"
-      },
-      {
-        Effect = "Allow",
-        Action = [
+          "autoscaling:DescribeAutoScalingGroups",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "sns:Publish",
+          "sns:ListTopics",
+          "sns:Subscribe"
         ],
         Resource = "*"
       }
@@ -56,24 +62,18 @@ resource "aws_iam_policy" "lambda_scaling_policy" {
   })
 }
 
-# Attach Policy to Role
 resource "aws_iam_role_policy_attachment" "lambda_scaling_policy_attachment" {
   role       = aws_iam_role.lambda_scaling_role.name
   policy_arn = aws_iam_policy.lambda_scaling_policy.arn
 }
 
-data "aws_ssm_parameter" "asg_name" {
-  name = "/asg/name"
-}
-
-# Lambda Function
-resource "aws_lambda_function" "scaling_function" {
-  filename         = "lambda_scaling.zip"  # Zip file containing the Lambda function code
-  function_name    = "scaling_function"
+resource "aws_lambda_function" "scaling_function_up" {
+  filename         = "${path.module}/src/lambda_scaling_up.zip"
+  function_name    = "scaling_function_up"
   role             = aws_iam_role.lambda_scaling_role.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = "src.lambda_scaling_up.lambda_handler"
   runtime          = "python3.10"
-  source_code_hash = filebase64sha256("lambda_scaling.zip")
+  source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_up.zip")
   
   environment {
     variables = {
@@ -82,34 +82,64 @@ resource "aws_lambda_function" "scaling_function" {
   }
 }
 
-# SNS Topic
+resource "aws_lambda_function" "scaling_function_down" {
+  filename         = "${path.module}/src/lambda_scaling_down.zip"
+  function_name    = "scaling_function_down"
+  role             = aws_iam_role.lambda_scaling_role.arn
+  handler          = "src.lambda_scaling_down.lambda_handler"
+  runtime          = "python3.10"
+  source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_down.zip")
+  
+  environment {
+    variables = {
+      AUTOSCALING_GROUP_NAME = data.aws_ssm_parameter.asg_name.value
+    }
+  }
+}
+
 resource "aws_sns_topic" "scaling_topic" {
   name = "scaling-topic"
 }
 
-# SNS Subscription for Lambda
-resource "aws_sns_topic_subscription" "sns_lambda_subscription" {
-  topic_arn = aws_sns_topic.scaling_topic.arn
-  protocol  = "lambda"
-  endpoint  = aws_lambda_function.scaling_function.arn
-
-  depends_on = [
-    aws_lambda_function.scaling_function
-  ]
-}
-
-# SNS Subscription for SMS
-resource "aws_sns_topic_subscription" "sms_subscription" {
+resource "aws_sns_topic_subscription" "scaling_topic_sms_subscription" {
   topic_arn = aws_sns_topic.scaling_topic.arn
   protocol  = "sms"
-  endpoint  = var.phone_number
+  endpoint  = var.phone_number 
 }
 
-# Lambda Permission to Invoke from SNS
-resource "aws_lambda_permission" "allow_sns_invoke" {
-  statement_id  = "AllowExecutionFromSNS"
+resource "aws_ssm_parameter" "scaling_topic_arn" {
+  name  = "/sns/scaling_topic_arn"
+  type  = "String"
+  value = aws_sns_topic.scaling_topic.arn
+}
+
+data "aws_sqs_queue" "scaling_queue" {
+  name = data.aws_ssm_parameter.sqs_name.value
+}
+
+#eventbridge for scale down
+resource "aws_cloudwatch_event_rule" "every_minute" {
+  name                = "every_minute"
+  schedule_expression = "rate(1 minute)"
+}
+
+resource "aws_cloudwatch_event_target" "invoke_lambda_scaling_down" {
+  rule      = aws_cloudwatch_event_rule.every_minute.name
+  target_id = "invoke_lambda_scaling_down"
+  arn       = aws_lambda_function.scaling_function_down.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_to_invoke_lambda" {
+  statement_id  = "AllowExecutionFromEventBridge"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.scaling_function.function_name
-  principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.scaling_topic.arn
+  function_name = aws_lambda_function.scaling_function_down.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.every_minute.arn
+}
+
+resource "aws_lambda_event_source_mapping" "sqs_trigger" {
+  event_source_arn =  data.aws_sqs_queue.scaling_queue.arn
+  function_name    = aws_lambda_function.scaling_function_up.arn
+  batch_size       = 1
+  enabled          = true
 }
