@@ -7,7 +7,7 @@ autoscaling = boto3.client('autoscaling')
 
 QUEUE_URL = ssm.get_parameter(Name="/sqs/audio_processing/url")['Parameter']['Value']
 AUTO_SCALING_GROUP = ssm.get_parameter(Name="/asg/name")['Parameter']['Value']
-SNS_TOPIC = ssm.get_parameter(Name="/sns/topic")['Parameter']['Value']
+SNS_TOPIC = ssm.get_parameter(Name="/sns/scaling_topic_arn")['Parameter']['Value']
 
 MESSAGES_PER_INSTANCE = 10  # Customize based on processing capacity of each instance
 
