@@ -5,7 +5,7 @@ ssm = boto3.client('ssm')
 sns = boto3.client('sns')
 autoscaling = boto3.client('autoscaling')
 
-QUEUE_URL = ssm.get_parameter(Name="/sqs/scaling/url")['Parameter']['Value']
+QUEUE_URL = ssm.get_parameter(Name="/sqs/audio_processing/url")['Parameter']['Value']
 AUTO_SCALING_GROUP = ssm.get_parameter(Name="/asg/name")['Parameter']['Value']
 SNS_TOPIC = ssm.get_parameter(Name="/sns/scaling_topic_arn")['Parameter']['Value']
 
