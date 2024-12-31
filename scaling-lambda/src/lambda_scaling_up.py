@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     desired_capacity = max(min_size, min(required_instances, max_size))
     
     # if no instances and queue length is greater than 1, start with 1 instance
-    if current_capacity == 0 and queue_length > 1:
+    if current_capacity == 0 and queue_length >= 1:
         print(f"No instances available, Starting with 1 instance for queue length {queue_length}")
         desired_capacity = 1
 
