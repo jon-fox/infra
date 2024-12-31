@@ -4,7 +4,7 @@ sqs = boto3.client('sqs')
 ssm = boto3.client('ssm')
 autoscaling = boto3.client('autoscaling')
 
-QUEUE_URL = ssm.get_parameter(Name="/sqs/audio_processing/url")['Parameter']['Value']
+QUEUE_URL = ssm.get_parameter(Name="/sqs/scaling/url")['Parameter']['Value']
 AUTO_SCALING_GROUP = ssm.get_parameter(Name="/asg/name")['Parameter']['Value']
 
 def lambda_handler(event, context):

@@ -10,7 +10,7 @@ terraform {
 }
 
 data "aws_ssm_parameter" "sqs_name" {
-  name = "/sqs/audio_processing/name"
+  name = "/sqs/scaling/name"
 }
 
 data "aws_ssm_parameter" "asg_name" {
