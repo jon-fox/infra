@@ -269,6 +269,27 @@ resource "aws_iam_policy" "sqs_access_policy" {
   })
 }
 
+resource "aws_iam_policy" "lambda_invoke_policy" {
+  name        = "LambdaInvokePolicy"
+  description = "Policy to allow invoking Lambda functions"
+  
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "lambda:InvokeFunction",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_invoke_policy_attachment" {
+  role       = data.aws_iam_role.existing_role.name
+  policy_arn = aws_iam_policy.lambda_invoke_policy.arn
+}
+
 resource "aws_iam_role_policy_attachment" "sqs_policy_attachment" {
   role       = data.aws_iam_role.existing_role.name
   policy_arn = aws_iam_policy.sqs_access_policy.arn
