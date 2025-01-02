@@ -18,7 +18,7 @@ resource "aws_sqs_queue" "sqs_queue" {
   name                      = "audio-processing-queue"
   # fifo_queue                = true
   fifo_queue                = false
-  visibility_timeout_seconds = 3600 # how long the message is invisible after it is being processed
+  visibility_timeout_seconds = 900 #15 min, how long the message is invisible after it is being processed
   message_retention_seconds  = 86400 # retention
   delay_seconds              = 0 # delay of message visibility to consumers
   max_message_size           = 262144
@@ -31,7 +31,7 @@ resource "aws_sqs_queue" "sqs_scaling_queue" {
   name                      = "ec2-scaling-queue"
   # fifo_queue                = true
   fifo_queue                = false
-  visibility_timeout_seconds = 3600 # how long the message is invisible after it is being processed
+  visibility_timeout_seconds = 600 # 10 min, how long the message is invisible after it is being processed
   message_retention_seconds  = 86400 # retention
   delay_seconds              = 0 # delay of message visibility to consumers
   max_message_size           = 262144
