@@ -29,6 +29,10 @@ resource "aws_dynamodb_table" "user_feeds" {
     type = "S"  # String
   }
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
@@ -43,6 +47,10 @@ resource "aws_dynamodb_table" "episodes" {
   attribute {
     name = "episode_id"
     type = "S"  # String
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 
   tags = {
@@ -67,9 +75,45 @@ resource "aws_dynamodb_table" "feed_episodes" {
     type = "S"  # String
   }
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
+  }
+}
+
+resource "aws_dynamodb_table" "users_table" {
+  name           = "UsersTable"
+  billing_mode   = "PAY_PER_REQUEST" # On-demand scaling
+  hash_key       = "username"
+
+  attribute {
+    name = "username"
+    type = "S" # String
+  }
+
+  # Enable server-side encryption for security
+  server_side_encryption {
+    enabled = true
+  }
+
+  # Optional: Configure TTL (e.g., for temporary data like session expiration)
+  ttl {
+    attribute_name = "ttl"
+    enabled        = false
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  # Tags for organization
+  tags = {
+    Environment = "production"
+    Team        = "PodcastAdFreeService"
   }
 }
 
