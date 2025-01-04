@@ -36,6 +36,7 @@ resource "aws_dynamodb_table" "user_feeds" {
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
+    Description = "Feeds for each user"
   }
 }
 
@@ -56,6 +57,7 @@ resource "aws_dynamodb_table" "episodes" {
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
+    Description = "Individual episodes with url, publish date, etc."
   }
 }
 
@@ -82,6 +84,7 @@ resource "aws_dynamodb_table" "feed_episodes" {
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
+    Description = "Episodes in each feed linking table"
   }
 }
 
@@ -114,6 +117,7 @@ resource "aws_dynamodb_table" "users_table" {
   tags = {
     Environment = "production"
     Team        = "PodcastAdFreeService"
+    Description = "User account data for the PodcastAdFreeService"
   }
 }
 
