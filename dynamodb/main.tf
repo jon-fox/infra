@@ -57,7 +57,7 @@ resource "aws_dynamodb_table" "episodes" {
   tags = {
     Environment = "production"
     Project     = "PodcastAdFreeService"
-    Description = "Individual episodes with url, publish date, etc."
+    Description = "Episodes with metadata"
   }
 }
 
@@ -117,7 +117,7 @@ resource "aws_dynamodb_table" "users_table" {
   tags = {
     Environment = "production"
     Team        = "PodcastAdFreeService"
-    Description = "User account data for the PodcastAdFreeService"
+    Description = "User account data"
   }
 }
 
