@@ -16,11 +16,11 @@ data "aws_ssm_parameter" "vpc_id" {
 resource "aws_dynamodb_table" "user_feeds" {
   name           = "UserFeeds"
   billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "user_id"    # Partition key
+  hash_key       = "username"    # Partition key
   range_key      = "feed_id"    # Sort key
 
   attribute {
-    name = "user_id"
+    name = "username"
     type = "S"  # String
   }
 
