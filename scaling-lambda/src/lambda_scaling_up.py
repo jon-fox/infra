@@ -53,6 +53,10 @@ def lambda_handler(event, context):
         print(f"No instances available, Starting with 1 instance for queue length {queue_length}")
         desired_capacity = 1
 
+    # Ensure desired capacity is at least 1 if there are messages in the queue
+    if queue_length > 0 and desired_capacity < 1:
+        desired_capacity = 1
+
     # Update the ASG if the capacity needs adjustment
     if desired_capacity != current_capacity:
         print(f"Updating ASG desired capacity to {desired_capacity}")
