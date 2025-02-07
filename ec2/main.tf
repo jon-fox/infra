@@ -188,7 +188,7 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   }
 
   min_size         = 0
-  max_size         = 1
+  max_size         = 3
   desired_capacity = 0
 
   # target_group_arns = [aws_lb_target_group.app_tg.arn]
@@ -212,6 +212,19 @@ resource "aws_autoscaling_group" "ec2_autoscaling_group_name" {
   # health_check_type         = "EC2"
   # health_check_grace_period = 300
 }
+
+resource "aws_autoscaling_lifecycle_hook" "termination_hook" {
+  name                   = "graceful-termination-hook"
+  autoscaling_group_name = aws_autoscaling_group.ec2_autoscaling_group_name.name
+  lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
+  default_result         = "CONTINUE"
+  heartbeat_timeout      = 600  # seconds (10 minutes)
+
+  # Optional: If you want to send notifications (e.g., to an SNS topic)
+  # notification_target_arn = aws_sns_topic.lifecycle_notifications.arn
+  # role_arn                = aws_iam_role.autoscaling_lifecycle_role.arn
+}
+
 
 resource "aws_ssm_parameter" "asg_name" {
   name  = "/asg/name"
