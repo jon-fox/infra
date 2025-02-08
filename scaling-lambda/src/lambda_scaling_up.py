@@ -1,4 +1,5 @@
 import boto3
+import time
 
 sqs = boto3.client('sqs')
 ssm = boto3.client('ssm')
@@ -13,24 +14,36 @@ MESSAGES_PER_INSTANCE = 10  # Customize based on processing capacity of each ins
 
 def notify_scaling_action(desired_capacity):
     try:
+        print(f"Sending SNS notification for scaling action. New desired capacity: {desired_capacity}")
         message = f"Scaling action taken. New desired capacity: {desired_capacity}"
         sns.publish(
             TopicArn=SNS_TOPIC,
             Message=message,
             Subject="Auto Scaling Notification"
         )
+        print("SNS notification sent successfully")
     except Exception as e:
         print(f"Error sending SNS notification: {e}")
 
-def lambda_handler(event, context):
-    # Retrieve the number of messages in the queue
+def get_queue_length():
     response = sqs.get_queue_attributes(
         QueueUrl=QUEUE_URL,
         AttributeNames=['ApproximateNumberOfMessages']
     )
-    queue_length = int(response['Attributes']['ApproximateNumberOfMessages'])
+    return int(response['Attributes']['ApproximateNumberOfMessages'])
+
+def lambda_handler(event, context):
+    # First read of queue length
+    initial_queue_length = get_queue_length()
+    # Wait for 10 seconds to allow SQS to become eventually consistent
+    time.sleep(10)
+    # Second read of queue length
+    second_queue_length = get_queue_length()
     
-    # Calculate the required number of EC2 instances
+    # Use the maximum value from the two checks
+    queue_length = max(initial_queue_length, second_queue_length)
+    
+    # Calculate the required number of EC2 instances based on your MESSAGES_PER_INSTANCE factor
     required_instances = (queue_length + MESSAGES_PER_INSTANCE - 1) // MESSAGES_PER_INSTANCE  # Ceiling division
     
     # Get current ASG capacity and bounds
@@ -48,9 +61,9 @@ def lambda_handler(event, context):
     # Ensure the desired capacity is within bounds
     desired_capacity = max(min_size, min(required_instances, max_size))
     
-    # if no instances and queue length is greater than 1, start with 1 instance
+    # if no instances and queue length is greater than or equal to 1, start with 1 instance
     if current_capacity == 0 and queue_length >= 1:
-        print(f"No instances available, Starting with 1 instance for queue length {queue_length}")
+        print(f"No instances available, starting with 1 instance for queue length {queue_length}")
         desired_capacity = 1
 
     # Ensure desired capacity is at least 1 if there are messages in the queue

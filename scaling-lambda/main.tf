@@ -76,6 +76,7 @@ resource "aws_lambda_function" "scaling_function_up" {
   role             = aws_iam_role.lambda_scaling_role.arn
   handler          = "lambda_scaling_up.lambda_handler"
   runtime          = "python3.10"
+  timeout          = 20 # lambda contains a 10 second wait
   source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_up.zip")
   
   environment {
@@ -91,7 +92,7 @@ resource "aws_lambda_function" "scaling_function_down" {
   role             = aws_iam_role.lambda_scaling_role.arn
   handler          = "lambda_scaling_down.lambda_handler"
   runtime          = "python3.10"
-  timeout          = 14 
+  timeout          = 20 # lambda contains a 10 second wait
   source_code_hash = filebase64sha256("${path.module}/src/lambda_scaling_down.zip")
   
   environment {
