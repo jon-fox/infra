@@ -277,7 +277,8 @@ resource "aws_iam_policy" "sqs_access_policy" {
           "sqs:GetQueueUrl",
           "autoscaling:SetDesiredCapacity",
           "autoscaling:DescribeAutoScalingGroups",
-          "autoscaling:UpdateAutoScalingGroup"
+          "autoscaling:UpdateAutoScalingGroup",
+          "autoscaling:DescribeAutoScalingInstances"
         ]
         Resource = "*"
       }
