@@ -274,7 +274,10 @@ resource "aws_iam_policy" "sqs_access_policy" {
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl"
+          "sqs:GetQueueUrl",
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:UpdateAutoScalingGroup"
         ]
         Resource = "*"
       }
