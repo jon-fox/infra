@@ -16,7 +16,7 @@ def notify_scaling_action(desired_capacity):
     try:
         print(f"Sending notification for scaling action. New desired capacity: {desired_capacity}")
         message = f"Scaling up action taken. New desired capacity after scale up: {desired_capacity}"
-        response = requests.post(ALERTS_WEBHOOK, json=message)
+        response = requests.post(ALERTS_WEBHOOK, json={"content": message})
         print(f"Notification sent successfully, {response}")
     except Exception as e:
         print(f"Error sending notification: {e}")
