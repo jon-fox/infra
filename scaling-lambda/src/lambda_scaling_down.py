@@ -1,5 +1,6 @@
 import boto3
 import time
+import requests
 
 sqs = boto3.client('sqs')
 ssm = boto3.client('ssm')
@@ -7,6 +8,16 @@ autoscaling = boto3.client('autoscaling')
 
 QUEUE_URL = ssm.get_parameter(Name="/sqs/audio_processing/url")['Parameter']['Value']
 AUTO_SCALING_GROUP = ssm.get_parameter(Name="/asg/name")['Parameter']['Value']
+ALERTS_WEBHOOK = ssm.get_parameter(Name="/application/discord/webhook")['Parameter']['Value']
+
+def notify_scaling_action(desired_capacity):
+    try:
+        print(f"Sending notification for scaling action. New desired capacity: {desired_capacity}")
+        message = f"Scaling down action taken. New desired capacity after scale down: {desired_capacity}"
+        response = requests.post(ALERTS_WEBHOOK, json=message)
+        print(f"Notification sent successfully, {response}")
+    except Exception as e:
+        print(f"Error sending notification: {e}")
 
 def get_queue_attributes():
     response = sqs.get_queue_attributes(
@@ -48,6 +59,7 @@ def lambda_handler(event, context):
             DesiredCapacity=new_capacity
         )
         print(f"Scaled down ASG to {new_capacity} instances.")
+        notify_scaling_action(new_capacity)
     else:
         print(f"No scaling action needed. Queue length = {queue_length}, In-flight = {in_flight_messages}, ASG capacity = {current_capacity}")
     

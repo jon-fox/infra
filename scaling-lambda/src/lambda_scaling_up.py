@@ -1,29 +1,25 @@
 import boto3
 import time
+import requests
 
 sqs = boto3.client('sqs')
 ssm = boto3.client('ssm')
-sns = boto3.client('sns')
 autoscaling = boto3.client('autoscaling')
 
 QUEUE_URL = ssm.get_parameter(Name="/sqs/audio_processing/url")['Parameter']['Value']
 AUTO_SCALING_GROUP = ssm.get_parameter(Name="/asg/name")['Parameter']['Value']
-SNS_TOPIC = ssm.get_parameter(Name="/sns/scaling_topic_arn")['Parameter']['Value']
+ALERTS_WEBHOOK = ssm.get_parameter(Name="/application/discord/webhook")['Parameter']['Value']
 
 MESSAGES_PER_INSTANCE = 10  # Customize based on processing capacity of each instance
 
 def notify_scaling_action(desired_capacity):
     try:
-        print(f"Sending SNS notification for scaling action. New desired capacity: {desired_capacity}")
-        message = f"Scaling action taken. New desired capacity: {desired_capacity}"
-        sns.publish(
-            TopicArn=SNS_TOPIC,
-            Message=message,
-            Subject="Auto Scaling Notification"
-        )
-        print("SNS notification sent successfully")
+        print(f"Sending notification for scaling action. New desired capacity: {desired_capacity}")
+        message = f"Scaling up action taken. New desired capacity after scale up: {desired_capacity}"
+        response = requests.post(ALERTS_WEBHOOK, json=message)
+        print(f"Notification sent successfully, {response}")
     except Exception as e:
-        print(f"Error sending SNS notification: {e}")
+        print(f"Error sending notification: {e}")
 
 def get_queue_length():
     response = sqs.get_queue_attributes(
