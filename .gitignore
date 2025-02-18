@@ -14,3 +14,4 @@ rds/nohup.out
 ec2/task-definition.json
 **/nohup.out
 **/*.zip
+**/dependencies/*
