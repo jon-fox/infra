@@ -121,3 +121,29 @@ resource "aws_dynamodb_table" "users_table" {
   }
 }
 
+resource "aws_dynamodb_table" "podcast_subscriptions" {
+  name           = "PodcastSubscriptions"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "podcast_uuid"  # Unique Podcast Series ID
+  range_key      = "username"      # The user who subscribed
+
+  attribute {
+    name = "podcast_uuid"
+    type = "S"  # String
+  }
+
+  attribute {
+    name = "username"
+    type = "S"  # String
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Environment = "production"
+    Project     = "PodcastAdFreeService"
+    Description = "Tracks which users subscribe to which podcasts"
+  }
+}
