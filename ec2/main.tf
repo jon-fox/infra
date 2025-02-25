@@ -116,6 +116,12 @@ resource "aws_security_group" "ec2_launch_template_sg" {
   }
 }
 
+resource "aws_ssm_parameter" "ec2_launch_template_sg" {
+  name  = "/account/ec2/sg"
+  type  = "String"
+  value = aws_security_group.ec2_launch_template_sg.id
+}
+
 data "aws_iam_role" "existing_role" {
   name = "docker-external-app"
 }
